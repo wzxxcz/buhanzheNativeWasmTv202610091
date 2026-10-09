@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -30,9 +32,9 @@ import java.util.zip.ZipFile;
 /** Checks release manifests, downloads a compatible APK, and opens the system installer. */
 final class AutoUpdater {
     private static final String TAG = "AutoUpdater";
-    private static final String IMPORTANT_VERSION_URL = "https://github.com/buhanzhe/NativeWasmTv/"
+    private static final String IMPORTANT_VERSION_URL = "https://github.com/dyr1980/buhanzhe-NativeWasmTv/"
             + "releases/latest/download/version.json";
-    private static final String LITE_VERSION_URL = "https://github.com/buhanzhe/NativeWasmTv/"
+    private static final String LITE_VERSION_URL = "https://github.com/dyr1980/buhanzhe-NativeWasmTv/"
             + "releases/latest/download/version-lite.json";
     private static final int CONNECT_TIMEOUT_MS = 15000;
     private static final int READ_TIMEOUT_MS = 30000;
@@ -262,7 +264,8 @@ final class AutoUpdater {
                 && isArm32Build() && supports64Bit();
         String urlField = architectureUpgrade ? "apk64Url" : BuildConfig.UPDATE_APK_URL_FIELD;
         String shaField = architectureUpgrade ? "sha25664" : BuildConfig.UPDATE_SHA256_FIELD;
-        String apkAsset = architectureUpgrade ? "nTv64.apk" : BuildConfig.UPDATE_APK_ASSET;
+        // 修改点 1：将 nTv64.apk 改为 XCZ64.apk
+        String apkAsset = architectureUpgrade ? "XCZ64.apk" : BuildConfig.UPDATE_APK_ASSET;
         String apkUrl = object.optString(urlField, "").trim();
         String sha256 = object.optString(shaField, "")
                 .trim().toLowerCase(Locale.US);
@@ -528,7 +531,20 @@ final class AutoUpdater {
 
     private void launchInstaller(File apk) {
         try {
-            ApkTransferInstaller.launchInstaller(activity, apk);
+            Uri uri;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                uri = ApkFileProvider.uriForFile(activity, apk);
+            } else {
+                apk.setReadable(true, false);
+                uri = Uri.fromFile(apk);
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(uri, "application/vnd.android.package-archive");
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+            activity.startActivity(intent);
         } catch (Exception error) {
             Log.e(TAG, "Unable to launch package installer", error);
             Toast.makeText(activity, R.string.update_install_failed, Toast.LENGTH_LONG).show();
@@ -549,7 +565,8 @@ final class AutoUpdater {
         connection.setInstanceFollowRedirects(true);
         connection.setUseCaches(false);
         connection.setRequestProperty("Accept-Encoding", "identity");
-        connection.setRequestProperty("User-Agent", "nTv/" + BuildConfig.VERSION_NAME
+        // 修改点 2：将 nTv/ 改为 XCZ/
+        connection.setRequestProperty("User-Agent", "XCZ/" + BuildConfig.VERSION_NAME
                 + " Android/" + Build.VERSION.RELEASE);
         return connection;
     }
