@@ -18,9 +18,7 @@ public final class ApkFileProvider extends ContentProvider {
     private static final String PATH_UPDATES = "updates";
 
     static File updateDirectory(Context context) {
-        // Old TVs may have no mounted external storage or deny storage permission.
-        // Keep the received APK private on every API level. Installation uses a
-        // provider grant or a dedicated readable copy for old OEM installers.
+        // 使用应用私有目录，兼容老电视且无需外部存储权限。
         File base = context.getFilesDir();
         if (base == null) {
             base = context.getCacheDir();
@@ -126,6 +124,7 @@ public final class ApkFileProvider extends ContentProvider {
     }
 
     private static boolean isAllowedName(String name) {
-        return name != null && name.matches("(?:nTv(?:64)?|received)-[0-9]+\\.apk");
+        // 匹配 XCZ.apk、XCZ64.apk、XCZX86.apk，以及 received-12345.apk 或 XCZ-12345.apk
+        return name != null && name.matches("(?:XCZ(?:64|X86)?|received)(?:-[0-9]+)?\\.apk");
     }
 }
