@@ -33,3 +33,4 @@ scripts/*
 /tests/*
 !/tests/hls-cache-performance.test.py
 userscripts/
+tools/
